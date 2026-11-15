@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-app-alb-oidc
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internal
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
+    alb.ingress.kubernetes.io/certificate-arn: ${CERT_ARN}
+    alb.ingress.kubernetes.io/auth-type: oidc
+    alb.ingress.kubernetes.io/auth-idp-oidc: >-
+      {"issuer":"${OIDC_ISSUER}",
+       "authorizationEndpoint":"${OIDC_ISSUER}/authorize",
+       "tokenEndpoint":"${OIDC_ISSUER}/oauth/token",
+       "userInfoEndpoint":"${OIDC_ISSUER}/userinfo",
+       "secretName":"alb-oidc-secret"}
+    alb.ingress.kubernetes.io/auth-scope: openid
+    alb.ingress.kubernetes.io/auth-session-timeout: "604800"
+spec:
+  ingressClassName: alb
+  rules:
+    - host: ${APP_HOST}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: my-app
+                port:
+                  number: 8080
